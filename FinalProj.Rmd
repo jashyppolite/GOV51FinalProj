@@ -1,0 +1,93 @@
+---
+title: "Data Analysis"
+author: "Jasmine Hyppolite"
+date: "11/16/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+break down by party and gender 
+```{r Summary Statistics}
+anti_a <- anti_abort_replication_leg_party_compet_28Jan20
+
+# ideology scale summary 
+summary(anti_a$IPG8)
+
+# populations proportions of party and gender
+table(anti_a$Female, anti_a$party)
+
+pro_all <- subset(anti_a,bin_pro_all == 1)
+
+anti_a$gender_party <- NA
+anti_a$gender_party[anti_a$Female == 1 & anti_a$party == "D"] <- "Dem. Woman"
+anti_a$gender_party[anti_a$Female == 1 & anti_a$party == "R"] <- "Rep. Woman"
+anti_a$gender_party[anti_a$Female == 0 & anti_a$party == "D"] <- "Dem. Man"
+anti_a$gender_party[anti_a$Female == 0 & anti_a$party == "R"] <- "Rep. Man"
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+$$ antifetus = mx + b$$
+
+
+```{r main regression, echo=FALSE}
+# regression: trying to regress 
+lm(anti_a$Female ~ anti_a$bin_anti_fetus)
+# 1% chance of being female increasing support for anti abortion with fetus bill
+
+#two way table
+
+
+dem_fem <- subset(anti_a, Female == 1 & party == "D")
+dem_male<- subset(anti_a, Female == 0 & party == "D")
+rep_fem <- subset(anti_a, Female == 1 & party == "R")
+rep_male <- subset(anti_a, Female == 0 & party == "R")
+
+
+gender_party_means <- tapply(anti_a$bin_anti_all, anti_a$gender_party, mean)
+party_means <- tapply(anti_a$bin_anti_all, anti_a$party, mean)
+IPG8_means <- tapply(anti_a$IPG8, anti_a$gender_party, mean)
+hist(x = dem_fem$IPG8, freq = FALSE)
+hist(x = dem_male$IPG8, freq = FALSE)
+hist(x = rep_fem$IPG8, freq = FALSE)
+hist(x = reo_male$IPG8, freq = FALSE)
+
+barplot(gender_party_means,
+        main = "Distribution of Voting for Anti-Abortion Bills by Gender and Party",
+        xlab = "Party and Gender",
+        ylab = "Distribution",
+        col = "steelblue2",
+        border = "white")
+barplot(party_means,
+        main = "Distribution of Anti-Abortion Bill Votes by Party",
+        xlab = "Party",
+        ylab = "Distribution",
+        col = "indianred",
+        border = "white")
+barplot(IPG8_means,
+        main = "Distribution of IPG8 Scores by Party and Gender",
+        xlab = "Gender and Party",
+        ylab = "IPG8 Score",
+        col = "dodgerblue",
+        border = "white")
+
+
+
+# regress both gender and party onto bill votes
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
