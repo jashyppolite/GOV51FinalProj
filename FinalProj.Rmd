@@ -11,23 +11,30 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 
-break down by party and gender 
+
+Breaking data down by party and gender
+
 ```{r Summary Statistics}
-anti_a <- anti_abort_replication_leg_party_compet_28Jan20
+
+library(haven)
+anti_a <- read_dta("data/anti_abort replication leg_party_compet 28Jan20.dta")
+
+# Subsets of the data potentially for future use
+women <- subset(anti_a, Female == 1)
+men <- subset(anti_a, Female == 0)
+republicans <- subset(anti_a, party == "R")
+democrats <- subset(anti_a, party == "D")
 
 # ideology scale summary 
-summary(anti_a$IPG8)
+summary(anti_a$np_score_2)
 
-# populations proportions of party and gender
+# population proportions of party and gender
 table(anti_a$Female, anti_a$party)
+prop.table(table(anti_a$Female, anti_a$party))
 
-pro_all <- subset(anti_a,bin_pro_all == 1)
-
+# setting types within gender party so I can use this later
 anti_a$gender_party <- NA
 anti_a$gender_party[anti_a$Female == 1 & anti_a$party == "D"] <- "Dem. Woman"
 anti_a$gender_party[anti_a$Female == 1 & anti_a$party == "R"] <- "Rep. Woman"
@@ -36,33 +43,35 @@ anti_a$gender_party[anti_a$Female == 0 & anti_a$party == "R"] <- "Rep. Man"
 
 ```
 
-## Including Plots
+##  Plots
 
-You can also embed plots, for example:
-$$ antifetus = mx + b$$
-
-
-```{r main regression, echo=FALSE}
+```{r Main Plots, echo=FALSE}
 # regression: trying to regress 
 lm(anti_a$Female ~ anti_a$bin_anti_fetus)
 # 1% chance of being female increasing support for anti abortion with fetus bill
 
 #two way table
 
-
 dem_fem <- subset(anti_a, Female == 1 & party == "D")
 dem_male<- subset(anti_a, Female == 0 & party == "D")
 rep_fem <- subset(anti_a, Female == 1 & party == "R")
 rep_male <- subset(anti_a, Female == 0 & party == "R")
 
+# Means  to describe proportions to be used in histograms and bar plots
 
 gender_party_means <- tapply(anti_a$bin_anti_all, anti_a$gender_party, mean)
 party_means <- tapply(anti_a$bin_anti_all, anti_a$party, mean)
 IPG8_means <- tapply(anti_a$IPG8, anti_a$gender_party, mean)
-hist(x = dem_fem$IPG8, freq = FALSE)
-hist(x = dem_male$IPG8, freq = FALSE)
-hist(x = rep_fem$IPG8, freq = FALSE)
-hist(x = reo_male$IPG8, freq = FALSE)
+
+# histograms of ideological scale froom 1-7.259, liberal to conservative
+
+hist(x = dem_fem$np_score_2, freq = FALSE)
+hist(x = dem_male$np_score_2, freq = FALSE)
+hist(x = rep_fem$np_score_2, freq = FALSE)
+hist(x = rep_male$np_score_2, freq = FALSE)
+hist(x = women$np_score_2, freq = FALSE)
+
+# Bar Plot for gender and party distribution of voting for at least one anti-abortion bill
 
 barplot(gender_party_means,
         main = "Distribution of Voting for Anti-Abortion Bills by Gender and Party",
@@ -70,12 +79,18 @@ barplot(gender_party_means,
         ylab = "Distribution",
         col = "steelblue2",
         border = "white")
+
+# Bar Plot for party distribution of voting for at least one anti-abortion bill
+
 barplot(party_means,
         main = "Distribution of Anti-Abortion Bill Votes by Party",
         xlab = "Party",
         ylab = "Distribution",
         col = "indianred",
         border = "white")
+
+# Bar Plot for PG8 score distribution of voting for at least one anti-abortion bill
+
 barplot(IPG8_means,
         main = "Distribution of IPG8 Scores by Party and Gender",
         xlab = "Gender and Party",
@@ -84,10 +99,71 @@ barplot(IPG8_means,
         border = "white")
 
 
+```
 
+Here I take some regressions of quantities of interest and did some preliminary interpretations, that candidly, I am very unsure about. 
+
+```{r Regressions}
 # regress both gender and party onto bill votes
 
+# What resonates most by gender? (unsure if these should be proportions 
+# or probabilities)
 
+lm(anti_a$Female ~ anti_a$bin_anti_all)
+# unsure of the order here, but I might interpret this one as 23% of males having 
+# voted for at least one anti-abortion bill. 
+
+gender_all_fit <- lm(anti_a$bin_anti_all ~ anti_a$Female)
+# males are four percent more likely to have voted for at least 
+# one anti abortion bill. or among males, the prop that has
+# supported a bill as such is ~ 4 percent 
+
+
+gender_antiwom_fit<- lm(anti_a$bin_anti_womtot ~ anti_a$Female)
+# Males are 2.3% more likely to have voted for an anti abortion 
+# bill that was pro-woman and pro-life
+
+gender_antirelig_fit <- lm(anti_a$bin_anti_relig ~ anti_a$Female)
+# males are 1.7% more likely to have voted for an anti abortion bill 
+# that adheres to a religious or moral issue frame
+
+gender_antifetus_fit <- lm(anti_a$bin_anti_fetus ~ anti_a$Female)
+#males are 1.3% more likely to have votes for an anti abortion bill that 
+# adheres to a fetal centric issue frame
+
+# What resonates most by ideology?
+
+lm(anti_a$bin_anti_all ~ anti_a$np_score_2)
+# if you increase the IPG8 score by one unit, the probability of voting for an 
+# anti abortion bill would be a difference of 3.6 percentage points
+
+lm(anti_a$bin_anti_womtot ~ anti_a$np_score_2)
+# if you increase the IPG8 score by one unit, the probability of voting for an 
+# anti abortion bill would be a difference of 2.4 percentage points
+
+lm(anti_a$bin_anti_relig ~ anti_a$np_score_2)
+# if you increase the IPG8 score by one unit, the probability of voting for an 
+# anti abortion bill would be a difference of 1.5 percentage points
+
+lm(anti_a$bin_anti_fetus ~ anti_a$np_score_2)
+## if you increase the IPG8 score by one unit, the probability of voting for an 
+# anti abortion bill would be a difference of 1.2 percentage points
+
+# What resonates most by party?
+
+lm(anti_a$bin_anti_all ~ anti_a$party)
+# r = .05545, is highest out of all parties
+
+lm(anti_a$bin_anti_relig ~ anti_a$party)
+# r = 0.0248, is highest out of all parties, independent is slightly negative
+# and d = .004485
+
+lm(anti_a$bin_anti_fetus ~ anti_a$party)
+# r = .020949, highest of all again, I is negative and d is positive but 
+# closer to zero
+
+lm(anti_a$bin_anti_womtot ~ anti_a$party)
+# I = .039299, I is surprisingly the highest here, followed by R, and then D
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
